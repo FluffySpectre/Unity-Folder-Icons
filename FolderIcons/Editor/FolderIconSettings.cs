@@ -22,6 +22,11 @@ namespace FolderIcons
         public bool includeChildren = true;
 
         public FolderIcon[] icons = new FolderIcon[0];
-        public FolderIcon[] flattendIcons;
+
+        public override int GetHashCode() => HashCode.Combine(
+            showOverlay,
+            showCustomFolder,
+            includeChildren,
+            icons);
     }
 }

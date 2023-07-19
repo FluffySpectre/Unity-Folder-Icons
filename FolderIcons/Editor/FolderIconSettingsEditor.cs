@@ -119,7 +119,6 @@ namespace FolderIcons
             }
             if (EditorGUI.EndChangeCheck())
             {
-                settings.flattendIcons = null;
                 ApplySettings();
             }
 
@@ -129,7 +128,6 @@ namespace FolderIcons
             iconList.DoLayoutList();
             if (EditorGUI.EndChangeCheck())
             {
-                settings.flattendIcons = null;
                 serializedObject.ApplyModifiedProperties();
             }
 

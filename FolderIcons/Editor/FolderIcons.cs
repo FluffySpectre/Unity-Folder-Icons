@@ -11,6 +11,8 @@ namespace FolderIcons
         // References
         private static Object[] allFolderIcons;
         private static FolderIconSettings folderIcons;
+        private static Dictionary<Object, FolderIconSettings.FolderIcon> cache;
+        private static int cacheHash;
 
         public static bool showFolder;
         public static bool showOverlay;
@@ -64,20 +66,22 @@ namespace FolderIcons
                 return;
             }
 
-            if (folderIcons.flattendIcons == null || folderIcons.flattendIcons.Length < folderIcons.icons.Length)
+            if (cache == null || cacheHash != folderIcons.GetHashCode())
             {
-                var flattend = new List<FolderIconSettings.FolderIcon>();
+                cache = new();
+                cacheHash = folderIcons.GetHashCode();
 
                 for (int i = 0; i < folderIcons.icons.Length; i++)
                 {
                     FolderIconSettings.FolderIcon icon = folderIcons.icons[i];
-                    flattend.Add(icon);
+                    cache.TryAdd(icon.folder, icon);
 
                     if (!folderIcons.includeChildren)
                     {
                         continue;
                     }
 
+                    // Implement 'Include Children'
                     var path2 = AssetDatabase.GetAssetPath(icon.folder);
 
                     var subDirs = Directory.GetDirectories(path2, "*", SearchOption.AllDirectories);
@@ -85,7 +89,7 @@ namespace FolderIcons
                     {
                         DefaultAsset subFolderAsset = (DefaultAsset)AssetDatabase.LoadAssetAtPath(Path.GetRelativePath(Application.dataPath + "/..", subDir), typeof(DefaultAsset));
 
-                        flattend.Add(new FolderIconSettings.FolderIcon
+                        cache.TryAdd(subFolderAsset, new FolderIconSettings.FolderIcon
                         {
                             folder = subFolderAsset,
                             folderIcon = icon.folderIcon,
@@ -93,24 +97,15 @@ namespace FolderIcons
                         });
                     }
                 }
-
-                folderIcons.flattendIcons = flattend.ToArray();
             }
 
-            for (int i = 0; i < folderIcons.flattendIcons.Length; i++)
+            if (cache.TryGetValue(folderAsset, out FolderIconSettings.FolderIcon cachedIcon))
             {
-                FolderIconSettings.FolderIcon icon = folderIcons.flattendIcons[i];
-
-                if (icon.folder != folderAsset)
-                {
-                    continue;
-                }
-
-                DrawTextures(selectionRect, icon, folderAsset, guid);
+                DrawTextures(selectionRect, cachedIcon, guid);
             }
         }
 
-        private static void DrawTextures(Rect rect, FolderIconSettings.FolderIcon icon, Object folderAsset, string guid)
+        private static void DrawTextures(Rect rect, FolderIconSettings.FolderIcon icon, string guid)
         {
             bool isTreeView = rect.width > rect.height;
             bool isSideView = FolderIconGUI.IsSideView(rect);
