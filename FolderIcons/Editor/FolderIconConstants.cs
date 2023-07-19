@@ -17,6 +17,7 @@ namespace FolderIcons
 
         public const string PREF_FOLDER = "FolderPlus_ShowCustomFolders";
         public const string PREF_OVERLAY = "FolderPlus_ShowCustomIcons";
+        public const string INCLUDE_CHILDREN = "FolderPlus_IncludeChildren";
 
         // GUI
         public const float MAX_TREE_WIDTH = 118f;
@@ -27,10 +28,10 @@ namespace FolderIcons
         public const float MAX_PROJECT_HEIGHT = 110f;
 
         // Colours
-        public static readonly Color SelectedColor = new Color (0.235f, 0.360f, 0.580f);
+        public static readonly Color SelectedColor = new Color(0.235f, 0.360f, 0.580f);
 
         public static Color BackgroundColour = EditorGUIUtility.isProSkin
-          ? new Color32 (51, 51, 51, 255)
-          : new Color32 (190, 190, 190, 255);
+          ? new Color32(51, 51, 51, 255)
+          : new Color32(190, 190, 190, 255);
     }
 }

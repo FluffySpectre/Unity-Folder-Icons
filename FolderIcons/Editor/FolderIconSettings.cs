@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FolderIcons
 {
-    [CreateAssetMenu (fileName = "Folder Icon Manager", menuName = "Scriptables/Others/Folder Manager")]
+    [CreateAssetMenu(fileName = "Folder Icon Manager", menuName = "Scriptables/Others/Folder Manager")]
     public class FolderIconSettings : ScriptableObject
     {
         [Serializable]
@@ -18,9 +18,10 @@ namespace FolderIcons
 
         //Global Settings
         public bool showOverlay = true;
-
         public bool showCustomFolder = true;
+        public bool includeChildren = true;
 
         public FolderIcon[] icons = new FolderIcon[0];
+        public FolderIcon[] flattendIcons;
     }
 }

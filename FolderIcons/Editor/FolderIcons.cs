@@ -1,4 +1,6 @@
-﻿using UnityEditor;
+﻿using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
 using UnityEngine;
 
 namespace FolderIcons
@@ -12,10 +14,11 @@ namespace FolderIcons
 
         public static bool showFolder;
         public static bool showOverlay;
+        public static bool includeChildren;
 
         static FolderIconsReplacer()
         {
-            CheckPreferences ();
+            CheckPreferences();
 
             EditorApplication.projectWindowItemOnGUI -= ReplaceFolders;
             EditorApplication.projectWindowItemOnGUI += ReplaceFolders;
@@ -25,7 +28,7 @@ namespace FolderIcons
         {
             if (folderIcons == null)
             {
-                allFolderIcons = GetAllInstances<FolderIconSettings> ();
+                allFolderIcons = GetAllInstances<FolderIconSettings>();
 
                 if (allFolderIcons.Length > 0)
                 {
@@ -33,13 +36,13 @@ namespace FolderIcons
                 }
                 else
                 {
-                    FolderIconSettings settings = ScriptableObject.CreateInstance<FolderIconSettings> ();
-                    AssetDatabase.CreateAsset (settings, "Assets/FolderIcons.asset");
+                    FolderIconSettings settings = ScriptableObject.CreateInstance<FolderIconSettings>();
+                    AssetDatabase.CreateAsset(settings, "Assets/FolderIcons.asset");
 
-                    AssetDatabase.SaveAssets ();
-                    AssetDatabase.Refresh ();
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
 
-                    folderIcons = AssetDatabase.LoadAssetAtPath ("Assets/FolderIcons.asset", typeof (FolderIconSettings)) as FolderIconSettings;
+                    folderIcons = AssetDatabase.LoadAssetAtPath("Assets/FolderIcons.asset", typeof(FolderIconSettings)) as FolderIconSettings;
                 }
             }
 
@@ -53,31 +56,64 @@ namespace FolderIcons
                 return;
             }
 
-            string path = AssetDatabase.GUIDToAssetPath (guid);
-            Object folderAsset = AssetDatabase.LoadAssetAtPath (path, typeof (DefaultAsset));
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            Object folderAsset = AssetDatabase.LoadAssetAtPath(path, typeof(DefaultAsset));
 
             if (folderAsset == null)
             {
                 return;
             }
 
-            for (int i = 0; i < folderIcons.icons.Length; i++)
+            if (folderIcons.flattendIcons == null || folderIcons.flattendIcons.Length < folderIcons.icons.Length)
             {
-                FolderIconSettings.FolderIcon icon = folderIcons.icons[i];
+                var flattend = new List<FolderIconSettings.FolderIcon>();
+
+                for (int i = 0; i < folderIcons.icons.Length; i++)
+                {
+                    FolderIconSettings.FolderIcon icon = folderIcons.icons[i];
+                    flattend.Add(icon);
+
+                    if (!folderIcons.includeChildren)
+                    {
+                        continue;
+                    }
+
+                    var path2 = AssetDatabase.GetAssetPath(icon.folder);
+
+                    var subDirs = Directory.GetDirectories(path2, "*", SearchOption.AllDirectories);
+                    foreach (var subDir in subDirs)
+                    {
+                        DefaultAsset subFolderAsset = (DefaultAsset)AssetDatabase.LoadAssetAtPath(Path.GetRelativePath(Application.dataPath + "/..", subDir), typeof(DefaultAsset));
+
+                        flattend.Add(new FolderIconSettings.FolderIcon
+                        {
+                            folder = subFolderAsset,
+                            folderIcon = icon.folderIcon,
+                            overlayIcon = icon.overlayIcon,
+                        });
+                    }
+                }
+
+                folderIcons.flattendIcons = flattend.ToArray();
+            }
+
+            for (int i = 0; i < folderIcons.flattendIcons.Length; i++)
+            {
+                FolderIconSettings.FolderIcon icon = folderIcons.flattendIcons[i];
 
                 if (icon.folder != folderAsset)
                 {
                     continue;
                 }
 
-                DrawTextures (selectionRect, icon, folderAsset, guid);
+                DrawTextures(selectionRect, icon, folderAsset, guid);
             }
         }
 
         private static void DrawTextures(Rect rect, FolderIconSettings.FolderIcon icon, Object folderAsset, string guid)
         {
             bool isTreeView = rect.width > rect.height;
-            bool isSideView = FolderIconGUI.IsSideView (rect);
+            bool isSideView = FolderIconGUI.IsSideView(rect);
 
             // Vertical Folder View
             if (isTreeView)
@@ -97,12 +133,12 @@ namespace FolderIcons
 
             if (showFolder && icon.folderIcon)
             {
-                FolderIconGUI.DrawFolderTexture (rect, icon.folderIcon, guid);
+                FolderIconGUI.DrawFolderTexture(rect, icon.folderIcon, guid);
             }
 
             if (showOverlay && icon.overlayIcon)
             {
-                FolderIconGUI.DrawOverlayTexture (rect, icon.overlayIcon);
+                FolderIconGUI.DrawOverlayTexture(rect, icon.overlayIcon);
             }
         }
 
@@ -112,43 +148,50 @@ namespace FolderIcons
         {
             string prefFolder = FolderIconConstants.FOLDER_TEXTURE_PATH;
             string prefIcon = FolderIconConstants.ICONS_TEXTURE_PATH;
+            string prefChildren = FolderIconConstants.INCLUDE_CHILDREN;
 
-            if (!EditorPrefs.HasKey (prefFolder))
+            if (!EditorPrefs.HasKey(prefFolder))
             {
-                EditorPrefs.SetBool (prefFolder, true);
+                EditorPrefs.SetBool(prefFolder, true);
             }
 
-            if (!EditorPrefs.HasKey (prefIcon))
+            if (!EditorPrefs.HasKey(prefIcon))
             {
-                EditorPrefs.SetBool (prefIcon, true);
+                EditorPrefs.SetBool(prefIcon, true);
             }
 
-            showFolder = EditorPrefs.GetBool (prefFolder);
-            showOverlay = EditorPrefs.GetBool (prefIcon);
+            if (!EditorPrefs.HasKey(prefChildren))
+            {
+                EditorPrefs.SetBool(prefChildren, true);
+            }
+
+            showFolder = EditorPrefs.GetBool(prefFolder);
+            showOverlay = EditorPrefs.GetBool(prefIcon);
+            includeChildren = EditorPrefs.GetBool(prefChildren);
         }
 
         private static bool FindOrCreateFolder(string path, string folderCreateName)
         {
-            if (AssetDatabase.IsValidFolder (path))
+            if (AssetDatabase.IsValidFolder(path))
             {
                 return true;
             }
 
-            string parentFolder = path.Substring (0, path.LastIndexOf ('/'));
-            return AssetDatabase.CreateFolder (parentFolder, folderCreateName) != "";
+            string parentFolder = path.Substring(0, path.LastIndexOf('/'));
+            return AssetDatabase.CreateFolder(parentFolder, folderCreateName) != "";
         }
 
         private static T[] GetAllInstances<T>() where T : Object
         {
-            string[] guids = AssetDatabase.FindAssets ("t:" + typeof (T).Name);
+            string[] guids = AssetDatabase.FindAssets("t:" + typeof(T).Name);
 
             T[] instances = new T[guids.Length];
 
             //probably could get optimized
             for (int i = 0; i < guids.Length; i++)
             {
-                string path = AssetDatabase.GUIDToAssetPath (guids[i]);
-                instances[i] = AssetDatabase.LoadAssetAtPath<T> (path);
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                instances[i] = AssetDatabase.LoadAssetAtPath<T>(path);
             }
 
             return instances;
