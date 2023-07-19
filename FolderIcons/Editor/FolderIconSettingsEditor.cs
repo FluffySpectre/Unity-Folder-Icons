@@ -119,6 +119,7 @@ namespace FolderIcons
             }
             if (EditorGUI.EndChangeCheck())
             {
+                settings.flattendIcons = null;
                 ApplySettings();
             }
 
@@ -128,6 +129,7 @@ namespace FolderIcons
             iconList.DoLayoutList();
             if (EditorGUI.EndChangeCheck())
             {
+                settings.flattendIcons = null;
                 serializedObject.ApplyModifiedProperties();
             }
 
@@ -151,11 +153,6 @@ namespace FolderIcons
 
         private void ApplySettings()
         {
-            if(settings.includeChildren != includeChildren)
-            {
-                settings.flattendIcons = null;
-            }
-
             FolderIconsReplacer.showFolder = settings.showCustomFolder = showCustomFolders;
             FolderIconsReplacer.showOverlay = settings.showOverlay = showCustomOverlay;
             FolderIconsReplacer.includeChildren = settings.includeChildren = includeChildren;
