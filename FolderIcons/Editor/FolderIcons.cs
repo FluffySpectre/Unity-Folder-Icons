@@ -83,6 +83,10 @@ namespace FolderIcons
 
                     // Implement 'Include Children'
                     var path2 = AssetDatabase.GetAssetPath(icon.folder);
+                    if (path2.Length == 0)
+                    {
+                        continue;
+                    }
 
                     var subDirs = Directory.GetDirectories(path2, "*", SearchOption.AllDirectories);
                     foreach (var subDir in subDirs)
